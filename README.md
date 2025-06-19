@@ -1,4 +1,4 @@
-# VoiceInputApp
+# VoiceCoding
 
 macOS用の音声入力アプリケーション。音声認識した内容を自動的にClaude Codeに送信します。
 
@@ -19,8 +19,8 @@ macOS用の音声入力アプリケーション。音声認識した内容を自
 
 ```bash
 # リポジトリをクローン
-git clone https://github.com/yourusername/VoiceInputApp.git
-cd VoiceInputApp
+git clone https://github.com/yourusername/VoiceCoding.git
+cd VoiceCoding
 
 # アプリをビルド
 ./build_app.sh
@@ -37,7 +37,7 @@ cd VoiceInputApp
 ## プロジェクト構成
 
 ```
-VoiceInputApp/
+VoiceCoding/
 ├── Package.swift              # Swift Package Manager設定
 ├── VoiceInputApp/
 │   ├── VoiceInputApp.swift   # アプリのエントリーポイント
