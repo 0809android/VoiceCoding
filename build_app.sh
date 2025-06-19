@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Build the executable
-echo "Building VoiceInputApp..."
+echo "Building VoiceCoding..."
 swift build -c release
 
 # Create app bundle structure
-APP_NAME="VoiceInputApp"
+APP_NAME="VoiceCoding"
 BUILD_DIR=".build/release"
 APP_BUNDLE="$APP_NAME.app"
 CONTENTS_DIR="$APP_BUNDLE/Contents"
@@ -23,17 +23,17 @@ mkdir -p "$RESOURCES_DIR"
 cp "$BUILD_DIR/$APP_NAME" "$MACOS_DIR/"
 
 # Copy Info.plist
-cp "VoiceInputApp/Info.plist" "$CONTENTS_DIR/"
+cp "VoiceCoding/Info.plist" "$CONTENTS_DIR/"
 
 # Copy entitlements
-cp "VoiceInputApp/VoiceInputApp.entitlements" "$RESOURCES_DIR/"
+cp "VoiceCoding/VoiceCoding.entitlements" "$RESOURCES_DIR/"
 
 # Sign the app with entitlements
 echo "Signing app with entitlements..."
-codesign --force --sign - --entitlements "VoiceInputApp/VoiceInputApp.entitlements" "$APP_BUNDLE"
+codesign --force --sign - --entitlements "VoiceCoding/VoiceCoding.entitlements" "$APP_BUNDLE"
 
 echo "App bundle created: $APP_BUNDLE"
 
 # Run the app
-echo "Running VoiceInputApp..."
+echo "Running VoiceCoding..."
 open "$APP_BUNDLE"

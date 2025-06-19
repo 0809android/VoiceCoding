@@ -2,21 +2,21 @@
 import PackageDescription
 
 let package = Package(
-    name: "VoiceInputApp",
+    name: "VoiceCoding",
     platforms: [
         .macOS(.v13)
     ],
     products: [
         .executable(
-            name: "VoiceInputApp",
-            targets: ["VoiceInputApp"]
+            name: "VoiceCoding",
+            targets: ["VoiceCoding"]
         )
     ],
     targets: [
         .executableTarget(
-            name: "VoiceInputApp",
-            path: "VoiceInputApp",
-            exclude: ["Info.plist", "VoiceInputApp.entitlements"]
+            name: "VoiceCoding",
+            path: "VoiceCoding",
+            exclude: ["Info.plist", "VoiceCoding.entitlements"]
         )
     ]
 )

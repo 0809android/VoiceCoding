@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct VoiceInputApp: App {
+struct VoiceCoding: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

@@ -5,13 +5,13 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>ja_JP</string>
     <key>CFBundleExecutable</key>
-    <string>VoiceInputApp</string>
+    <string>VoiceCoding</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.VoiceInputApp</string>
+    <string>com.example.VoiceCoding</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>VoiceInputApp</string>
+    <string>VoiceCoding</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

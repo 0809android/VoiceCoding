@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Building VoiceInputApp with Swift Package Manager..."
+echo "Building VoiceCoding with Swift Package Manager..."
 
 # Clean previous builds
 rm -rf .build
@@ -9,10 +9,10 @@ rm -rf .build
 swift build -c release
 
 # Find the built executable
-EXECUTABLE=".build/release/VoiceInputApp"
+EXECUTABLE=".build/release/VoiceCoding"
 
 if [ -f "$EXECUTABLE" ]; then
-    echo "Running VoiceInputApp..."
+    echo "Running VoiceCoding..."
     # Run the executable
     "$EXECUTABLE"
 else
