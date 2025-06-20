@@ -4,6 +4,7 @@ import AVFoundation
 struct SettingsView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var localization = LocalizationManager.shared
     @State private var selectedTab = "voice"
     @State private var showingResetAlert = false
     
@@ -29,6 +30,8 @@ struct SettingsView: View {
                         RecordingSettingsSection()
                     case "appearance":
                         AppearanceSettingsSection()
+                    case "language":
+                        LanguageSettingsSection()
                     case "about":
                         AboutSection()
                     default:
@@ -40,34 +43,49 @@ struct SettingsView: View {
         }
         .frame(width: 700, height: 500)
         .background(Color(NSColor.windowBackgroundColor))
-        .alert("Reset Settings", isPresented: $showingResetAlert) {
-            Button("Cancel", role: .cancel) { }
-            Button("Reset", role: .destructive) {
+        .alert(localization.localizedString("reset_settings"), isPresented: $showingResetAlert) {
+            Button(localization.localizedString("cancel"), role: .cancel) { }
+            Button(localization.localizedString("reset"), role: .destructive) {
                 settings.resetToDefaults()
             }
         } message: {
-            Text("Are you sure you want to reset all settings to their default values? This action cannot be undone.")
+            Text(localization.localizedString("reset_settings_message"))
         }
     }
     
     // MARK: - Header View
     private var headerView: some View {
         HStack {
-            Text("Settings")
+            Text(localization.localizedString("settings"))
                 .font(.title2)
-                .fontWeight(.semibold)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
             
             Spacer()
             
             HStack(spacing: 12) {
-                Button("Reset to Defaults") {
+                Button(action: {
                     showingResetAlert = true
+                }) {
+                    Text(localization.localizedString("reset_to_defaults"))
+                        .fontWeight(.medium)
                 }
                 .buttonStyle(BorderedButtonStyle())
                 
-                Button("Done") {
+                Button(action: {
                     dismiss()
+                }) {
+                    Text(localization.localizedString("done"))
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.accentColor)
+                        )
                 }
+                .buttonStyle(PlainButtonStyle())
                 .keyboardShortcut(.defaultAction)
             }
         }
@@ -78,28 +96,35 @@ struct SettingsView: View {
     private var tabSelectionView: some View {
         HStack(spacing: 0) {
             SettingsTab(
-                title: "Voice",
+                title: localization.localizedString("voice"),
                 icon: "mic.fill",
                 isSelected: selectedTab == "voice",
                 action: { selectedTab = "voice" }
             )
             
             SettingsTab(
-                title: "Recording",
+                title: localization.localizedString("recording_settings"),
                 icon: "record.circle",
                 isSelected: selectedTab == "recording",
                 action: { selectedTab = "recording" }
             )
             
             SettingsTab(
-                title: "Appearance",
+                title: localization.localizedString("appearance"),
                 icon: "paintbrush.fill",
                 isSelected: selectedTab == "appearance",
                 action: { selectedTab = "appearance" }
             )
             
             SettingsTab(
-                title: "About",
+                title: localization.localizedString("language"),
+                icon: "globe",
+                isSelected: selectedTab == "language",
+                action: { selectedTab = "language" }
+            )
+            
+            SettingsTab(
+                title: localization.localizedString("about"),
                 icon: "info.circle.fill",
                 isSelected: selectedTab == "about",
                 action: { selectedTab = "about" }
@@ -126,8 +151,13 @@ struct SettingsTab: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .background(isSelected ? Color.accentColor.opacity(0.1) : Color.clear)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color.clear)
+            )
             .foregroundColor(isSelected ? .accentColor : .secondary)
+            .scaleEffect(isSelected ? 1.05 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
         .buttonStyle(PlainButtonStyle())
     }
@@ -136,13 +166,14 @@ struct SettingsTab: View {
 // MARK: - Voice Settings Section
 struct VoiceSettingsSection: View {
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var localization = LocalizationManager.shared
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            sectionHeader("Voice Settings")
+            sectionHeader(localization.localizedString("voice_settings"))
             
             // Voice Selection
-            settingRow("Voice") {
+            settingRow(localization.localizedString("voice_selection")) {
                 Picker("", selection: $settings.selectedVoice) {
                     ForEach(settings.availableVoices, id: \.identifier) { voice in
                         Text(voiceDisplayName(voice))
@@ -154,7 +185,7 @@ struct VoiceSettingsSection: View {
             }
             
             // Voice Speed
-            settingRow("Speed") {
+            settingRow(localization.localizedString("speed")) {
                 HStack {
                     Slider(value: $settings.voiceSpeed, in: 0.5...2.0)
                         .frame(width: 200)
@@ -165,7 +196,7 @@ struct VoiceSettingsSection: View {
             }
             
             // Voice Volume
-            settingRow("Volume") {
+            settingRow(localization.localizedString("volume")) {
                 HStack {
                     Slider(value: $settings.voiceVolume, in: 0.0...1.0)
                         .frame(width: 200)
@@ -176,7 +207,7 @@ struct VoiceSettingsSection: View {
             }
             
             // Voice Pitch
-            settingRow("Pitch") {
+            settingRow(localization.localizedString("pitch")) {
                 HStack {
                     Slider(value: $settings.voicePitch, in: 0.5...2.0)
                         .frame(width: 200)
@@ -189,8 +220,14 @@ struct VoiceSettingsSection: View {
             // Test Voice Button
             HStack {
                 Spacer()
-                Button("Test Voice") {
+                Button(action: {
                     testVoice()
+                }) {
+                    HStack {
+                        Image(systemName: "speaker.wave.3.fill")
+                        Text(localization.localizedString("test_voice"))
+                    }
+                    .fontWeight(.medium)
                 }
                 .buttonStyle(BorderedButtonStyle())
             }
@@ -221,13 +258,14 @@ struct VoiceSettingsSection: View {
 // MARK: - Recording Settings Section
 struct RecordingSettingsSection: View {
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var localization = LocalizationManager.shared
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            sectionHeader("Recording Settings")
+            sectionHeader(localization.localizedString("recording_settings_title"))
             
             // Silence Threshold
-            settingRow("Silence Threshold") {
+            settingRow(localization.localizedString("silence_threshold")) {
                 HStack {
                     Slider(value: $settings.silenceThreshold, in: -60...0)
                         .frame(width: 200)
@@ -238,14 +276,14 @@ struct RecordingSettingsSection: View {
             }
             
             // Auto Send
-            settingRow("Auto-send") {
+            settingRow(localization.localizedString("auto_send")) {
                 Toggle("", isOn: $settings.autoSendEnabled)
                     .toggleStyle(SwitchToggleStyle())
             }
             
             // Auto Send Delay
             if settings.autoSendEnabled {
-                settingRow("Auto-send Delay") {
+                settingRow(localization.localizedString("auto_send_delay")) {
                     HStack {
                         Slider(value: $settings.autoSendDelay, in: 0.5...5.0, step: 0.5)
                             .frame(width: 200)
@@ -260,14 +298,14 @@ struct RecordingSettingsSection: View {
             Divider()
                 .padding(.vertical)
             
-            sectionHeader("Advanced")
+            sectionHeader(localization.localizedString("advanced"))
             
-            settingRow("Show Debug Info") {
+            settingRow(localization.localizedString("show_debug_info")) {
                 Toggle("", isOn: $settings.showDebugInfo)
                     .toggleStyle(SwitchToggleStyle())
             }
             
-            settingRow("Haptic Feedback") {
+            settingRow(localization.localizedString("haptic_feedback")) {
                 Toggle("", isOn: $settings.enableHapticFeedback)
                     .toggleStyle(SwitchToggleStyle())
             }
@@ -278,24 +316,25 @@ struct RecordingSettingsSection: View {
 // MARK: - Appearance Settings Section
 struct AppearanceSettingsSection: View {
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var localization = LocalizationManager.shared
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            sectionHeader("Appearance Settings")
+            sectionHeader(localization.localizedString("appearance_settings"))
             
             // Theme Selection
-            settingRow("Theme") {
+            settingRow(localization.localizedString("theme")) {
                 Picker("", selection: $settings.selectedTheme) {
-                    Text("System").tag("system")
-                    Text("Light").tag("light")
-                    Text("Dark").tag("dark")
+                    Text(localization.localizedString("system")).tag("system")
+                    Text(localization.localizedString("light")).tag("light")
+                    Text(localization.localizedString("dark")).tag("dark")
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .frame(width: 250)
             }
             
             // Terminal Font Family
-            settingRow("Terminal Font") {
+            settingRow(localization.localizedString("terminal_font")) {
                 Picker("", selection: $settings.terminalFontFamily) {
                     ForEach(settings.fontFamilies, id: \.self) { font in
                         Text(font)
@@ -308,7 +347,7 @@ struct AppearanceSettingsSection: View {
             }
             
             // Terminal Font Size
-            settingRow("Font Size") {
+            settingRow(localization.localizedString("font_size")) {
                 HStack {
                     Slider(value: $settings.terminalFontSize, in: 10...24, step: 1)
                         .frame(width: 200)
@@ -323,8 +362,9 @@ struct AppearanceSettingsSection: View {
                 .padding(.vertical)
             
             VStack(alignment: .leading, spacing: 8) {
-                Text("Preview")
+                Text(localization.localizedString("preview"))
                     .font(.headline)
+                    .fontWeight(.semibold)
                 
                 Text("$ echo \"Hello, VoiceCoding!\"")
                     .font(.custom(settings.terminalFontFamily, size: CGFloat(settings.terminalFontSize)))
@@ -337,9 +377,54 @@ struct AppearanceSettingsSection: View {
     }
 }
 
+// MARK: - Language Settings Section
+struct LanguageSettingsSection: View {
+    @ObservedObject var settings = Settings.shared
+    @ObservedObject var localization = LocalizationManager.shared
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            sectionHeader(localization.localizedString("language_settings"))
+            
+            settingRow(localization.localizedString("select_language")) {
+                Picker("", selection: $localization.currentLanguage) {
+                    ForEach(localization.supportedLanguages, id: \.0) { language in
+                        Text(language.1)
+                            .tag(language.0)
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+                .frame(width: 250)
+            }
+            
+            // Language preview
+            VStack(alignment: .leading, spacing: 8) {
+                Text(localization.localizedString("preview"))
+                    .font(.headline)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(localization.localizedString("app_name"))
+                        .font(.title3)
+                        .fontWeight(.bold)
+                    Text(localization.localizedString("start_speaking"))
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(NSColor.textBackgroundColor))
+                )
+            }
+        }
+    }
+}
+
 // MARK: - About Section
 struct AboutSection: View {
     @ObservedObject var settings = Settings.shared
+    @ObservedObject var localization = LocalizationManager.shared
     
     var body: some View {
         VStack(alignment: .center, spacing: 20) {
@@ -348,11 +433,11 @@ struct AboutSection: View {
                 .font(.system(size: 80))
                 .foregroundColor(.accentColor)
             
-            Text("VoiceCoding")
+            Text(localization.localizedString("app_name"))
                 .font(.largeTitle)
                 .fontWeight(.bold)
             
-            Text("Version \(settings.appVersion) (Build \(settings.buildNumber))")
+            Text("\(localization.localizedString("version")) \(settings.appVersion) (\(localization.localizedString("build")) \(settings.buildNumber))")
                 .foregroundColor(.secondary)
             
             Divider()
@@ -363,7 +448,7 @@ struct AboutSection: View {
                 Link(destination: URL(string: settings.githubURL)!) {
                     HStack {
                         Image(systemName: "link")
-                        Text("View on GitHub")
+                        Text(localization.localizedString("view_on_github"))
                     }
                 }
                 .buttonStyle(LinkButtonStyle())
@@ -371,7 +456,7 @@ struct AboutSection: View {
                 Link(destination: URL(string: "https://github.com/yourusername/VoiceCoding/issues")!) {
                     HStack {
                         Image(systemName: "exclamationmark.bubble")
-                        Text("Report an Issue")
+                        Text(localization.localizedString("report_issue"))
                     }
                 }
                 .buttonStyle(LinkButtonStyle())
@@ -379,7 +464,7 @@ struct AboutSection: View {
                 Link(destination: URL(string: "https://github.com/yourusername/VoiceCoding/blob/main/LICENSE")!) {
                     HStack {
                         Image(systemName: "doc.text")
-                        Text("License")
+                        Text(localization.localizedString("license"))
                     }
                 }
                 .buttonStyle(LinkButtonStyle())
@@ -387,7 +472,7 @@ struct AboutSection: View {
             
             Spacer()
             
-            Text("Made with ❤️ using SwiftUI")
+            Text(localization.localizedString("made_with_love"))
                 .foregroundColor(.secondary)
                 .font(.caption)
         }
