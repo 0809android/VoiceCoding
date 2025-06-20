@@ -8,69 +8,45 @@ struct ContentView: View {
     @StateObject private var speechRecognizer = SpeechRecognizer()
     @StateObject private var terminalController = TerminalController()
     @StateObject private var voiceSettings = VoiceSettings()
+    @State private var voiceInputText = ""
+    @State private var terminalText = ""
+    @FocusState private var isVoiceInputFocused: Bool
+    @FocusState private var isTerminalFocused: Bool
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header with Voice Settings Button
-            HStack {
-                Text(localization.localizedString("app_name"))
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                // Settings Button
-                Button(action: {
-                    showingSettings.toggle()
-                }) {
-                    Image(systemName: "gearshape.fill")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
-                        .padding(8)
-                        .background(Circle().fill(Color.secondary.opacity(0.1)))
-                }
-                .buttonStyle(PlainButtonStyle())
-                .help(localization.localizedString("open_settings"))
-                .keyboardShortcut(",", modifiers: .command)
-            }
-            .padding()
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(NSColor.windowBackgroundColor),
-                        Color(NSColor.windowBackgroundColor).opacity(0.95)
-                    ]),
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            
-            Divider()
-            
+        ZStack {
             // Main Content Area
             HStack(spacing: 0) {
                 // Left Panel - Voice Input
                 VStack(spacing: 20) {
                     HStack {
                         Image(systemName: "mic.fill")
-                            .font(.title3)
+                            .font(.system(size: 14))
                             .foregroundColor(.accentColor)
                         Text(localization.localizedString("voice_input"))
-                            .font(.headline)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 14))
+                            .fontWeight(.medium)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
+                    .padding(.top, 8)
                     
                     // Transcription Area
-                    ScrollView {
-                        Text(speechRecognizer.recognizedText.isEmpty ? localization.localizedString("start_speaking") : speechRecognizer.recognizedText)
+                    ZStack(alignment: .topLeading) {
+                        if voiceInputText.isEmpty {
+                            Text(localization.localizedString("start_speaking"))
+                                .font(.system(size: CGFloat(settings.terminalFontSize), weight: .regular, design: .rounded))
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 12)
+                                .allowsHitTesting(false)
+                        }
+                        
+                        TextEditor(text: $voiceInputText)
                             .font(.system(size: CGFloat(settings.terminalFontSize), weight: .regular, design: .rounded))
-                            .foregroundColor(speechRecognizer.recognizedText.isEmpty ? .secondary : .primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
-                            .animation(.easeInOut(duration: 0.2), value: speechRecognizer.recognizedText)
+                            .scrollContentBackground(.hidden)
+                            .padding(8)
+                            .focused($isVoiceInputFocused)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(
@@ -84,28 +60,50 @@ struct ContentView: View {
                     )
                     .padding(.horizontal)
                     
-                    // Recording Button
-                    Button(action: {
-                        toggleRecording()
-                    }) {
-                        VStack(spacing: 8) {
-                            Image(systemName: speechRecognizer.isRecording ? "mic.circle.fill" : "mic.circle")
-                                .font(.system(size: 60))
-                                .foregroundColor(speechRecognizer.isRecording ? .red : .accentColor)
-                            
-                            Text(localization.localizedString(speechRecognizer.isRecording ? "recording" : "start_recording"))
-                                .font(.headline)
-                                .fontWeight(.semibold)
+                    // Recording Button with Space Key Hint
+                    VStack(spacing: 8) {
+                        Button(action: {
+                            toggleRecording()
+                        }) {
+                            HStack(spacing: 8) {
+                                if terminalController.isSpeaking {
+                                    Image(systemName: "speaker.wave.3.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.orange)
+                                } else {
+                                    Image(systemName: speechRecognizer.isRecording ? "mic.circle.fill" : "mic.circle")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(speechRecognizer.isRecording ? .red : .accentColor)
+                                }
+                                
+                                Text(localization.localizedString(terminalController.isSpeaking ? "speaking" : (speechRecognizer.isRecording ? "recording" : "start_recording")))
+                                    .font(.system(size: 14))
+                                    .fontWeight(.medium)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(speechRecognizer.isRecording ? Color.red.opacity(0.1) : Color.accentColor.opacity(0.1))
+                            )
                         }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        // Space key hint
+                        Text("Space")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                            )
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .scaleEffect(speechRecognizer.isRecording ? 1.1 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: speechRecognizer.isRecording)
                     .padding(.bottom)
-                    .keyboardShortcut(.space, modifiers: [])
                     
                     // Manual Send Button (when auto-send is off)
-                    if !settings.autoSendEnabled && !speechRecognizer.recognizedText.isEmpty {
+                    if !settings.autoSendEnabled && !voiceInputText.isEmpty {
                         Button(action: sendToTerminal) {
                             HStack {
                                 Image(systemName: "paperplane.fill")
@@ -162,35 +160,47 @@ struct ContentView: View {
                 VStack(spacing: 20) {
                     HStack {
                         Image(systemName: "terminal.fill")
-                            .font(.title3)
+                            .font(.system(size: 14))
                             .foregroundColor(.green)
                         Text(localization.localizedString("terminal_output"))
-                            .font(.headline)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 14))
+                            .fontWeight(.medium)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal)
+                    .padding(.top, 8)
                     
-                    // Processing indicator
-                    if terminalController.isProcessing {
-                        HStack {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .progressViewStyle(CircularProgressViewStyle())
-                            Text(localization.localizedString("thinking"))
-                                .font(.caption)
+                    ZStack(alignment: .topLeading) {
+                        if terminalText.isEmpty {
+                            Text(localization.localizedString("terminal_placeholder"))
+                                .font(.custom(settings.terminalFontFamily, size: CGFloat(settings.terminalFontSize)))
                                 .foregroundColor(.secondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 12)
+                                .allowsHitTesting(false)
                         }
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                    }
-                    
-                    ScrollView {
-                        Text(terminalController.output.isEmpty ? localization.localizedString("terminal_placeholder") : terminalController.output)
+                        
+                        TextEditor(text: $terminalText)
                             .font(.custom(settings.terminalFontFamily, size: CGFloat(settings.terminalFontSize)))
-                            .foregroundColor(terminalController.output.isEmpty ? .secondary : .primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding()
+                            .scrollContentBackground(.hidden)
+                            .padding(8)
+                            .focused($isTerminalFocused)
+                        
+                        // Processing indicator inside console
+                        if terminalController.isProcessing {
+                            VStack {
+                                Spacer()
+                                HStack(spacing: 4) {
+                                    ProgressView()
+                                        .scaleEffect(0.6)
+                                        .progressViewStyle(CircularProgressViewStyle())
+                                    Text(localization.localizedString("thinking"))
+                                        .font(.custom(settings.terminalFontFamily, size: CGFloat(settings.terminalFontSize - 2)))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding()
+                            }
+                        }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(
@@ -211,6 +221,27 @@ struct ContentView: View {
                 Color(NSColor.controlBackgroundColor)
                     .opacity(0.98)
             )
+            
+            // Settings Button - Top Right
+            VStack {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        showingSettings.toggle()
+                    }) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 16))
+                            .foregroundColor(.secondary)
+                            .padding(6)
+                            .background(Circle().fill(Color.secondary.opacity(0.1)))
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .help(localization.localizedString("open_settings"))
+                    .keyboardShortcut(",", modifiers: .command)
+                }
+                .padding()
+                Spacer()
+            }
         }
         .frame(minWidth: 900, minHeight: 600)
         .preferredColorScheme(settings.currentColorScheme)
@@ -233,6 +264,49 @@ struct ContentView: View {
                 await terminalController.startClaudeCode()
             }
         }
+        .onChange(of: speechRecognizer.recognizedText) { newText in
+            voiceInputText = newText
+        }
+        .onChange(of: terminalController.output) { newOutput in
+            terminalText = newOutput
+        }
+        .onChange(of: terminalController.isSpeaking) { isSpeaking in
+            if isSpeaking {
+                // Pause recording when the app starts speaking
+                if speechRecognizer.isRecording {
+                    speechRecognizer.stopRecording()
+                }
+            } else {
+                // Resume recording when the app stops speaking
+                // Add a small delay to avoid immediate recording of the end of speech
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    if !speechRecognizer.isRecording && !terminalController.isSpeaking {
+                        Task {
+                            await speechRecognizer.requestAuthorization()
+                            speechRecognizer.startRecording()
+                        }
+                    }
+                }
+            }
+        }
+        .background(
+            // Invisible view to handle keyboard events
+            Color.clear
+                .onAppear {
+                    NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                        if event.keyCode == 49 { // Space key
+                            if terminalController.isSpeaking {
+                                terminalController.stopSpeaking()
+                                return nil
+                            } else if !isVoiceInputFocused && !isTerminalFocused {
+                                toggleRecording()
+                                return nil
+                            }
+                        }
+                        return event
+                    }
+                }
+        )
     }
     
     private func toggleRecording() {
@@ -240,6 +314,13 @@ struct ContentView: View {
             NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
         }
         
+        // If app is speaking, stop speaking
+        if terminalController.isSpeaking {
+            terminalController.stopSpeaking()
+            return
+        }
+        
+        // Otherwise toggle recording
         if speechRecognizer.isRecording {
             speechRecognizer.stopRecording()
         } else {
@@ -251,11 +332,12 @@ struct ContentView: View {
     }
     
     private func sendToTerminal() {
-        guard !speechRecognizer.recognizedText.isEmpty else { return }
+        guard !voiceInputText.isEmpty else { return }
         
         Task {
-            await terminalController.sendToClaude(speechRecognizer.recognizedText)
+            await terminalController.sendToClaude(voiceInputText)
             speechRecognizer.clearAndContinueRecording()
+            voiceInputText = ""
         }
     }
 }

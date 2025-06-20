@@ -24,6 +24,7 @@ class Settings: ObservableObject {
     // Advanced Settings
     @AppStorage("showDebugInfo") var showDebugInfo: Bool = false
     @AppStorage("enableHapticFeedback") var enableHapticFeedback: Bool = true
+    @AppStorage("initialDirectory") var initialDirectory: String = ""
     
     // App Info
     let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -71,5 +72,6 @@ extension Settings {
         terminalFontFamily = "SF Mono"
         showDebugInfo = false
         enableHapticFeedback = true
+        initialDirectory = ""
     }
 }

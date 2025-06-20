@@ -3,14 +3,38 @@ import AppKit
 import AVFoundation
 
 @MainActor
-class TerminalController: ObservableObject {
+class TerminalController: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     @Published var output = ""
     @Published var isProcessing = false
+    @Published var isSpeaking = false
     
     private var process: Process?
     private let speechSynthesizer = AVSpeechSynthesizer()
     var lastSpokenLength = 0
     var voiceSettings: VoiceSettings?
+    
+    override init() {
+        super.init()
+        speechSynthesizer.delegate = self
+    }
+    
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
+        Task { @MainActor in
+            self.isSpeaking = true
+        }
+    }
+    
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        Task { @MainActor in
+            self.isSpeaking = false
+        }
+    }
+    
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        Task { @MainActor in
+            self.isSpeaking = false
+        }
+    }
     
     func startClaudeCode() async {
         output = "Claude Code ready. Send your voice input!\n"
@@ -33,7 +57,13 @@ class TerminalController: ObservableObject {
                 task.standardInput = inputPipe
                 
                 task.executableURL = URL(fileURLWithPath: "/bin/bash")
-                task.arguments = ["-c", "echo '\(text.replacingOccurrences(of: "'", with: "'\"'\"'"))' | /Users/kinocode/.npm-global/bin/claude --print"]
+                
+                // Get initial directory from settings
+                let settings = Settings.shared
+                let initialDir = settings.initialDirectory.isEmpty ? NSHomeDirectory() : settings.initialDirectory
+                
+                // Change to initial directory before running claude
+                task.arguments = ["-c", "cd '\(initialDir)' && echo '\(text.replacingOccurrences(of: "'", with: "'\"'\"'"))' | /Users/kinocode/.npm-global/bin/claude --print"]
                 
                 task.environment = ProcessInfo.processInfo.environment
                 task.environment?["PATH"] = "/Users/kinocode/.npm-global/bin:/usr/local/bin:/usr/bin:/bin"
@@ -93,6 +123,9 @@ class TerminalController: ObservableObject {
     }
     
     private func speak(_ text: String) {
+        // Ensure isSpeaking is set immediately to prevent race conditions
+        isSpeaking = true
+        
         // 音声合成の設定
         let utterance = AVSpeechUtterance(string: text)
         
@@ -117,13 +150,15 @@ class TerminalController: ObservableObject {
             speechSynthesizer.stopSpeaking(at: .immediate)
         }
         
-        speechSynthesizer.speak(utterance)
+        // Small delay to ensure audio system is ready
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.speechSynthesizer.speak(utterance)
+        }
     }
     
     func stopSpeaking() {
-        if speechSynthesizer.isSpeaking {
-            speechSynthesizer.stopSpeaking(at: .immediate)
-        }
+        speechSynthesizer.stopSpeaking(at: .immediate)
+        isSpeaking = false
     }
     
     deinit {

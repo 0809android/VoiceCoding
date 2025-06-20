@@ -309,6 +309,33 @@ struct RecordingSettingsSection: View {
                 Toggle("", isOn: $settings.enableHapticFeedback)
                     .toggleStyle(SwitchToggleStyle())
             }
+            
+            settingRow(localization.localizedString("initial_directory")) {
+                HStack {
+                    TextField(localization.localizedString("initial_directory_placeholder"), text: $settings.initialDirectory)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .frame(width: 250)
+                    
+                    Button(action: selectDirectory) {
+                        Image(systemName: "folder")
+                    }
+                    .buttonStyle(BorderedButtonStyle())
+                }
+            }
+        }
+    }
+    
+    private func selectDirectory() {
+        let openPanel = NSOpenPanel()
+        openPanel.canChooseFiles = false
+        openPanel.canChooseDirectories = true
+        openPanel.allowsMultipleSelection = false
+        openPanel.title = localization.localizedString("select_initial_directory")
+        
+        if openPanel.runModal() == .OK {
+            if let url = openPanel.url {
+                settings.initialDirectory = url.path
+            }
         }
     }
 }

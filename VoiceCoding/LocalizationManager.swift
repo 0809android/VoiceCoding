@@ -121,7 +121,13 @@ struct LocalizedStrings {
         "off": "オフ",
         
         // 処理状態
-        "thinking": "Claude が考え中..."
+        "thinking": "Claude が考え中...",
+        "speaking": "話し中...",
+        
+        // ディレクトリ設定
+        "initial_directory": "初期ディレクトリ",
+        "initial_directory_placeholder": "デフォルト: ホームディレクトリ",
+        "select_initial_directory": "初期ディレクトリを選択"
     ]
     
     static let enStrings: [String: String] = [
@@ -199,7 +205,13 @@ struct LocalizedStrings {
         "off": "Off",
         
         // Processing State
-        "thinking": "Claude is thinking..."
+        "thinking": "Claude is thinking...",
+        "speaking": "Speaking...",
+        
+        // Directory Settings
+        "initial_directory": "Initial Directory",
+        "initial_directory_placeholder": "Default: Home Directory",
+        "select_initial_directory": "Select Initial Directory"
     ]
     
     static let zhStrings: [String: String] = [
@@ -277,7 +289,13 @@ struct LocalizedStrings {
         "off": "关",
         
         // 处理状态
-        "thinking": "Claude 正在思考中..."
+        "thinking": "Claude 正在思考中...",
+        "speaking": "正在说话...",
+        
+        // 目录设置
+        "initial_directory": "初始目录",
+        "initial_directory_placeholder": "默认：主目录",
+        "select_initial_directory": "选择初始目录"
     ]
     
     static let koStrings: [String: String] = [
@@ -355,6 +373,12 @@ struct LocalizedStrings {
         "off": "꺼짐",
         
         // 처리 상태
-        "thinking": "Claude가 생각 중..."
+        "thinking": "Claude가 생각 중...",
+        "speaking": "말하는 중...",
+        
+        // 디렉토리 설정
+        "initial_directory": "초기 디렉토리",
+        "initial_directory_placeholder": "기본값: 홈 디렉토리",
+        "select_initial_directory": "초기 디렉토리 선택"
     ]
 }

@@ -34,6 +34,11 @@ codesign --force --sign - --entitlements "VoiceCoding/VoiceCoding.entitlements" 
 
 echo "App bundle created: $APP_BUNDLE"
 
+# Stop any existing instances
+echo "Stopping any existing instances..."
+pkill -f VoiceCoding || true
+sleep 1
+
 # Run the app
 echo "Running VoiceCoding..."
 open "$APP_BUNDLE"
